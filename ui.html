@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: Inter, sans-serif;
+      padding: 14px;
+      font-size: 14px;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-bottom: 60px;
+    }
+    table {
+      width: 100%;
+      border-collapse: separate;
+      font-size: 14px;
+      border: solid #E5E5E5 1px;
+      border-radius: 16px;
+    }
+    th, td {
+      padding: 12px;
+      font-size: 14px;
+      border-left: solid #E5E5E5 1px;
+      border-top: solid #E5E5E5 1px;
+    }
+    td:first-child, th:first-child {
+      border-left: none;
+    }
+    th {
+      border-top: none;
+      font-size: 14px;
+      text-align: left;
+    }
+    th.select-column {
+      width: 30px;
+    }
+    th .checkbox-label {
+      justify-content: left;
+    }
+    .primaryButton {
+      padding-left: 8px;
+      padding-right: 8px;
+      width: fit-content;
+      height: 36px;
+      appearance: button;
+      background-color: #18A0FB;
+      border-radius: 8px;
+      border-style: solid;
+      box-shadow: rgba(255, 255, 255, 0.26) 0 1px 2px inset;
+      color: white;
+      cursor: pointer;
+      font-family: "Inter", serif;
+      font-size: 14px;
+      font-weight: 600;
+      border-color: transparent;
+      border-width: 1px;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+    .primaryButton:active {
+      opacity: 100%;
+      color: #18A0FB;
+      border-color: #18A0FB;
+    }
+    .secondaryButton {
+      padding-left: 8px;
+      padding-right: 8px;
+      width: fit-content;
+      height: 36px;
+      appearance: button;
+      background-color: white;
+      border-radius: 8px;
+      border-style: solid;
+      box-shadow: rgba(255, 255, 255, 0.26) 0 1px 2px inset;
+      color: #18A0FB;
+      cursor: pointer;
+      font-family: "Inter", serif;
+      font-size: 14px;
+      font-weight: 600;
+      border-color: #18A0FB;
+      border-width: 1px;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+    .secondaryButton:active {
+      opacity: 100%;
+      border-width: 2px;
+      color: #18A0FB;
+      border-color: #18A0FB;
+    }
+    button:disabled {
+      color: #000000;
+      border-color: #000000;
+      opacity: 30%;
+    }
+    .error {
+      color: red;
+      margin-bottom: 8px;
+    }
+    .success {
+      color: rgb(0, 191, 0);
+      margin-bottom: 8px;
+    }
+    .button-group {
+      display: none;
+      gap: 8px;
+      justify-content: end;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding-top: 12px;
+      padding-bottom: 16px;
+      padding-right: 16px;
+      background: white;
+      box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+      height: 36;
+      z-index: 1000;
+    }
+    .button-group.visible {
+      display: flex;
+    }
+    .selection-header {
+      display: flex;
+      align-items: center;
+      justify-content: start;
+      padding: 8px 0;
+      margin-bottom: 8px;
+    }
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+    }
+    .checkmark {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 25px;
+      width: 25px;
+      background-color: #eee;
+    }
+    .checkbox-label input[type="checkbox"] {
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border: 1px solid #18A0FB;
+      border-radius: 4px;
+      outline: none;
+      background: white;
+      cursor: pointer;
+      position: relative;
+      justify-content: center;
+    }
+
+    .checkbox-label input[type="checkbox"]:checked {
+      background-color: #18A0FB;
+      border-color: #18A0FB;
+    }
+
+    .checkbox-label input[type="checkbox"]::after {
+      content: '';
+      width: 4px;
+      height: 8px;
+      border: solid white;
+      border-width: 0 2px 2px 0;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -60%) rotate(45deg);
+      display: none;
+    }
+
+    .checkbox-label input[type="checkbox"]:checked::after {
+      display: block;
+    }
+
+    .checkbox-label input[type="checkbox"]:hover {
+      background-color: rgba(24, 160, 251, 0.1);
+    }
+
+    .checkbox-label input[type="checkbox"]:checked:hover {
+      background-color: #18A0FB;
+      opacity: 0.8;
+    }
+
+    /* Empty state styles */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 0;
+      text-align: center;
+    }
+    
+    .empty-state img {
+      margin-bottom: 16px;
+    }
+    
+    .empty-state-text {
+      color: #666;
+      font-size: 14px;
+    }
+
+    #message {
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <button id="scanButton" class="secondaryButton">Scan Selected Frame</button>
+    <div id="frameInfo">
+      <span><strong>Frame : </strong></span>
+      <span id="frameName">-</span>
+    </div>
+    
+    <div id="layerListContainer" style="display: none; margin-top: 14px;">
+      <table id="layerList">
+        <thead>
+          <tr>
+            <th class="select-column">
+              <label class="checkbox-label">
+                <input type="checkbox" id="selectAll" disabled>
+              </label>
+            </th>
+            <th>Layer Name</th>
+            <th>Content</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td colspan="3">
+              <div class="empty-state">
+                <img src="https://img5.pic.in.th/file/secure-sv1/empty-state1.png" alt="Empty state">
+                <div class="empty-state-text">Please scan your frame.</div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <div class="button-group">
+      <button id="exportButton" class="secondaryButton" disabled>Export CSV</button>
+      <button id="generateButton" class="primaryButton" disabled>Generate Variables (0)</button>
+    </div>
+  </div>
+
+  <script>
+    let textLayers = [];
+    let currentFrameName = null;
+    
+    // Show empty state initially
+    document.getElementById('layerListContainer').style.display = 'block';
+    
+    // Function to update button group visibility
+    function updateButtonGroupVisibility() {
+      const buttonGroup = document.querySelector('.button-group');
+      const hasSelectedLayers = textLayers.some(layer => layer.selected);
+      const hasLayers = textLayers.length > 0;
+      
+      if (hasLayers && hasSelectedLayers) {
+        buttonGroup.classList.add('visible');
+      } else {
+        buttonGroup.classList.remove('visible');
+      }
+    }
+
+    document.getElementById('scanButton').onclick = () => {
+      parent.postMessage({ pluginMessage: { type: 'scan-selection' } }, '*');
+    };
+
+    function updateGenerateButtonText() {
+      const selectedCount = textLayers.filter(layer => layer.selected).length;
+      const generateButton = document.getElementById('generateButton');
+      generateButton.textContent = `Generate Variables (${selectedCount})`;
+      generateButton.disabled = selectedCount === 0;
+      
+      // Update button group visibility when selection changes
+      updateButtonGroupVisibility();
+    }
+
+    function updateFrameName(name) {
+      currentFrameName = name;  // Store the frame name
+      const frameNameElement = document.getElementById('frameName');
+      if (frameNameElement) {
+        frameNameElement.textContent = name || 'No frame selected';
+      }
+    }
+
+    function updateLayerList() {
+      const layerList = document.getElementById('layerList');
+      if (layerList) {
+        if (textLayers.length === 0) {
+          // Determine which empty state to show
+          const emptyStateContent = currentFrameName 
+            ? {
+                image: 'https://img2.pic.in.th/pic/empty-state2.png',
+                text: 'Oops, no text layer'
+              }
+            : {
+                image: 'https://img5.pic.in.th/file/secure-sv1/empty-state1.png',
+                text: 'Please scan your frame.'
+              };
+
+          layerList.innerHTML = `
+            <thead>
+              <tr>
+                <th class="select-column">
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="selectAll" disabled>
+                  </label>
+                </th>
+                <th>Layer Name</th>
+                <th>Content</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td colspan="3">
+                  <div class="empty-state">
+                    <img src="${emptyStateContent.image}" alt="Empty state">
+                    <div class="empty-state-text">${emptyStateContent.text}</div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>`;
+        } else {
+          // Show regular table content
+          layerList.innerHTML = `
+            <thead>
+              <tr>
+                <th class="select-column">
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="selectAll" ${textLayers.every(layer => layer.selected) ? 'checked' : ''}>
+                  </label>
+                </th>
+                <th>Layer Name</th>
+                <th>Content</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${textLayers.map((layer, index) => `
+                <tr>
+                  <td class="checkbox-label">
+                    <input type="checkbox" 
+                           data-index="${index}" 
+                           ${layer.selected ? 'checked' : ''}>
+                  </td>
+                  <td>${layer.name}</td>
+                  <td>${layer.content}</td>
+                </tr>
+              `).join('')}
+            </tbody>`;
+
+          // Add event listeners
+          const selectAllCheckbox = document.getElementById('selectAll');
+          selectAllCheckbox.onchange = (e) => {
+            const checked = e.target.checked;
+            textLayers = textLayers.map(layer => ({...layer, selected: checked}));
+            updateLayerList();
+            updateGenerateButtonText();
+          };
+
+          layerList.querySelectorAll('tbody input[type="checkbox"]').forEach(checkbox => {
+            checkbox.onchange = (e) => {
+              const target = e.target;
+              const index = parseInt(target.dataset.index);
+              textLayers[index].selected = target.checked;
+              document.getElementById('selectAll').checked = textLayers.every(layer => layer.selected);
+              updateGenerateButtonText();
+            };
+          });
+        }
+        
+        // Update button group visibility after updating the layer list
+        updateButtonGroupVisibility();
+      }
+    }
+
+    document.getElementById('generateButton').onclick = () => {
+      parent.postMessage({ 
+        pluginMessage: { 
+          type: 'generate-variables',
+          layers: textLayers
+        } 
+      }, '*');
+    };
+
+    document.getElementById('exportButton').onclick = () => {
+      try {
+        // Create CSV header
+        let csvContent = "Layer Name,Content\n";
+
+        // Add data rows
+        textLayers
+          .filter(layer => layer.selected)
+          .forEach(layer => {
+            // Escape special characters in CSV
+            const escapedName = layer.name.includes(',') ? `"${layer.name}"` : layer.name;
+            const escapedContent = layer.content.includes(',') ? `"${layer.content}"` : layer.content;
+            csvContent += `${escapedName},${escapedContent}\n`;
+          });
+
+        // Create data URI for CSV
+        const dataUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
+        
+        // Generate filename with current date
+        const exportName = 'localization_' + new Date().toISOString().split('T')[0] + '.csv';
+        
+        // Create and trigger download link
+        const linkElement = document.createElement('a');
+        linkElement.setAttribute('href', dataUri);
+        linkElement.setAttribute('download', exportName);
+        linkElement.click();
+
+        // Send success notification
+        parent.postMessage({ 
+          pluginMessage: { 
+            type: 'export-csv-success'
+          } 
+        }, '*');
+      } catch (error) {
+        // Send error notification
+        parent.postMessage({ 
+          pluginMessage: { 
+            type: 'export-csv-error'
+          } 
+        }, '*');
+      }
+    };
+
+    window.onmessage = (event) => {
+      const msg = event.data.pluginMessage;
+
+      if (msg.type === 'text-layers') {
+        textLayers = msg.layers;
+        
+        // Update frame name
+        updateFrameName(msg.frameName);
+        
+        // Show layer list container
+        document.getElementById('layerListContainer').style.display = 'block';
+        
+        // Update the layer list
+        updateLayerList();
+        
+        // Update generate button text and state
+        updateGenerateButtonText();
+        
+        // Enable export button if we have layers
+        const exportButton = document.getElementById('exportButton');
+        if (exportButton) exportButton.disabled = !textLayers.length;
+        
+        // Update button group visibility
+        updateButtonGroupVisibility();
+      }
+
+      if (msg.type === 'error' && msg.message) {
+        document.getElementById('message').innerHTML = 
+          `<div class="error">${msg.message}</div>`;
+      }
+
+      if (msg.type === 'success' && msg.message) {
+        document.getElementById('message').innerHTML = 
+          `<div class="success">${msg.message}</div>`;
+      }
+    };
+  </script>
+</body>
+</html>

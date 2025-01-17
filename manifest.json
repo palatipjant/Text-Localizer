@@ -1,0 +1,13 @@
+{
+  "name": "Text Localizer",
+  "id": "1462133646988215372",
+  "api": "1.0.0",
+  "main": "code.js",
+  "ui": "ui.html",
+  "editorType": ["figma"],
+  "networkAccess": {
+    "allowedDomains": ["https://img5.pic.in.th/file/secure-sv1/empty-state1.png", "https://img2.pic.in.th/pic/empty-state2.png"
+  ]
+  },
+  "documentAccess": "dynamic-page"
+}
