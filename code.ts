@@ -15,7 +15,7 @@ interface NotificationOptions {
   }
 }
 
-figma.showUI(__html__, { width: 800, height: 560 });
+figma.showUI(__html__, { width: 800, height: 520 });
 
 // Function to scan the selected frame
 async function scanSelectedFrame() {
@@ -66,13 +66,13 @@ figma.ui.onmessage = async (msg: { type: string; layers?: TextLayer[] }) => {
   }
 
   if (msg.type === 'export-csv-success') {
-    figma.notify('🎉 File .csv export successfully', {
+    figma.notify('📄 CSV file exported successfully!', {
       timeout: 5000,
     });
   }
 
   if (msg.type === 'export-csv-error') {
-    figma.notify('🔴 Failed to export .csv file', {
+    figma.notify('🔴 Failed to export CSV file', {
       timeout: 5000,
     });
   }
@@ -94,9 +94,9 @@ figma.ui.onmessage = async (msg: { type: string; layers?: TextLayer[] }) => {
         return;
       }
 
-      // Get or create the Localization collection
-      const localVariableCollections = figma.variables.getLocalVariableCollections();
-      let collection = localVariableCollections.find(c => c.name === "Localization");
+      // Get or create the Localization collection using the async version
+      const collections = await figma.variables.getLocalVariableCollectionsAsync();
+      let collection = collections.find(c => c.name === "Localization");
       
       if (!collection) {
         collection = figma.variables.createVariableCollection("Localization");
@@ -127,18 +127,27 @@ figma.ui.onmessage = async (msg: { type: string; layers?: TextLayer[] }) => {
           // Create variable name with frame prefix for grouping
           const variableName = `${frameName}/${layerName}`;
           
-          // Create the variable
-          const variable = figma.variables.createVariable(
-            variableName,
-            collection.id,
-            "STRING"
-          );
+          // Check if variable already exists
+          const existingVariables = await figma.variables.getLocalVariablesAsync();
+          const existingVariable = existingVariables.find(v => v.name === variableName);
+          
+          let variable;
+          if (existingVariable) {
+            variable = existingVariable;
+          } else {
+            // Create the variable using the collection node
+            variable = figma.variables.createVariable(
+              variableName,
+              collection,
+              "STRING"
+            );
+          }
           
           // Set the value for the default mode
           await variable.setValueForMode(defaultMode.modeId, layer.content);
           
           // Find the original text layer and bind it to the variable
-          const textNode = figma.getNodeById(layer.id);
+          const textNode = await figma.getNodeByIdAsync(layer.id);
           if (textNode && textNode.type === 'TEXT') {
             // Bind the variable to the text node
             await textNode.setBoundVariable('characters', variable);
@@ -154,7 +163,7 @@ figma.ui.onmessage = async (msg: { type: string; layers?: TextLayer[] }) => {
         timeout: 5000,
       });
     } catch (error) {
-      figma.notify('🔴 Failed to created variables ' + (error as Error).message, {
+      figma.notify('🔴 Failed to create variables: ' + (error as Error).message, {
         timeout: 5000,
       });
     }

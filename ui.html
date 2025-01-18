@@ -28,6 +28,10 @@
       font-size: 14px;
       border-left: solid #E5E5E5 1px;
       border-top: solid #E5E5E5 1px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 200px;
     }
     td:first-child, th:first-child {
       border-left: none;
@@ -49,7 +53,7 @@
       width: fit-content;
       height: 36px;
       appearance: button;
-      background-color: #18A0FB;
+      background-color: #3274F6;
       border-radius: 8px;
       border-style: solid;
       box-shadow: rgba(255, 255, 255, 0.26) 0 1px 2px inset;
@@ -65,8 +69,8 @@
     }
     .primaryButton:active {
       opacity: 100%;
-      color: #18A0FB;
-      border-color: #18A0FB;
+      color: #3274F6;
+      border-color: #3274F6;
     }
     .secondaryButton {
       padding-left: 8px;
@@ -78,12 +82,12 @@
       border-radius: 8px;
       border-style: solid;
       box-shadow: rgba(255, 255, 255, 0.26) 0 1px 2px inset;
-      color: #18A0FB;
+      color: #3274F6;
       cursor: pointer;
       font-family: "Inter", serif;
       font-size: 14px;
       font-weight: 600;
-      border-color: #18A0FB;
+      border-color: #3274F6;
       border-width: 1px;
       margin-bottom: 8px;
       text-align: center;
@@ -91,8 +95,8 @@
     .secondaryButton:active {
       opacity: 100%;
       border-width: 2px;
-      color: #18A0FB;
-      border-color: #18A0FB;
+      color: #3274F6;
+      border-color: #3274F6;
     }
     button:disabled {
       color: #000000;
@@ -396,30 +400,40 @@
 
     document.getElementById('exportButton').onclick = () => {
       try {
+        // Add BOM (Byte Order Mark) for UTF-8
+        let csvContent = '\ufeff';
+        
         // Create CSV header
-        let csvContent = "Layer Name,Content\n";
+        csvContent += "Frame,Layer Name,Content\n";
 
         // Add data rows
         textLayers
           .filter(layer => layer.selected)
           .forEach(layer => {
-            // Escape special characters in CSV
-            const escapedName = layer.name.includes(',') ? `"${layer.name}"` : layer.name;
-            const escapedContent = layer.content.includes(',') ? `"${layer.content}"` : layer.content;
-            csvContent += `${escapedName},${escapedContent}\n`;
+            // Escape special characters and handle quotes in CSV
+            const escapedFrame = currentFrameName.replace(/"/g, '""');
+            const escapedName = layer.name.replace(/"/g, '""');
+            const escapedContent = layer.content.replace(/"/g, '""');
+            
+            // Always wrap fields in quotes to preserve special characters
+            csvContent += `"${escapedFrame}","${escapedName}","${escapedContent}"\n`;
           });
 
-        // Create data URI for CSV
-        const dataUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
+        // Create blob with proper encoding
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
         
         // Generate filename with current date
         const exportName = 'localization_' + new Date().toISOString().split('T')[0] + '.csv';
         
         // Create and trigger download link
         const linkElement = document.createElement('a');
-        linkElement.setAttribute('href', dataUri);
+        linkElement.setAttribute('href', url);
         linkElement.setAttribute('download', exportName);
         linkElement.click();
+
+        // Clean up
+        URL.revokeObjectURL(url);
 
         // Send success notification
         parent.postMessage({ 
