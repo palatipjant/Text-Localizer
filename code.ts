@@ -21,11 +21,29 @@ figma.showUI(__html__, { width: 800, height: 520 });
 async function scanSelectedFrame() {
   const selection = figma.currentPage.selection;
   if (selection.length === 0) {
+    // figma.notify('🔴 Please select a frame', {
+    //   timeout: 5000,
+    // });
+    // Send message to UI with empty layers and null frame name
+    figma.ui.postMessage({
+      type: 'text-layers',
+      layers: [],
+      frameName: null
+    });
     return;
   }
 
   const frame = selection[0];
   if (frame.type !== 'FRAME') {
+    // figma.notify('🔴 Please select a frame', {
+    //   timeout: 5000,
+    // });
+    // Send message to UI with empty layers and null frame name
+    figma.ui.postMessage({
+      type: 'text-layers',
+      layers: [],
+      frameName: null
+    });
     return;
   }
 
@@ -96,10 +114,10 @@ figma.ui.onmessage = async (msg: { type: string; layers?: TextLayer[] }) => {
 
       // Get or create the Localization collection using the async version
       const collections = await figma.variables.getLocalVariableCollectionsAsync();
-      let collection = collections.find(c => c.name === "Localization");
+      let collection = collections.find(c => c.name === "Localized");
       
       if (!collection) {
-        collection = figma.variables.createVariableCollection("Localization");
+        collection = figma.variables.createVariableCollection("Localized");
       }
       
       // Get or create the default mode
@@ -122,7 +140,7 @@ figma.ui.onmessage = async (msg: { type: string; layers?: TextLayer[] }) => {
           const baseLayerName = layer.name;
           const count = nameOccurrences.get(baseLayerName) || 0;
           const layerName = count > 0 ? `${baseLayerName}_${count}` : baseLayerName;
-          nameOccurrences.set(baseLayerName, count + 2);
+          nameOccurrences.set(baseLayerName, count + 1);
 
           // Create variable name with frame prefix for grouping
           const variableName = `${frameName}/${layerName}`;

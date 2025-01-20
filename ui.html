@@ -234,7 +234,7 @@
                 <input type="checkbox" id="selectAll" disabled>
               </label>
             </th>
-            <th>Layer Name</th>
+            <th>Name</th>
             <th>Content</th>
           </tr>
         </thead>
@@ -295,7 +295,7 @@
       currentFrameName = name;  // Store the frame name
       const frameNameElement = document.getElementById('frameName');
       if (frameNameElement) {
-        frameNameElement.textContent = name || 'No frame selected';
+        frameNameElement.textContent = name || '-';
       }
     }
 
@@ -303,8 +303,8 @@
       const layerList = document.getElementById('layerList');
       if (layerList) {
         if (textLayers.length === 0) {
-          // Determine which empty state to show
-          const emptyStateContent = currentFrameName 
+          // Determine which empty state to show based on whether we have a valid frame
+          const emptyStateContent = currentFrameName !== null
             ? {
                 image: 'https://img2.pic.in.th/pic/empty-state2.png',
                 text: 'Oops, no text layer'
@@ -322,7 +322,7 @@
                     <input type="checkbox" id="selectAll" disabled>
                   </label>
                 </th>
-                <th>Layer Name</th>
+                <th>Name</th>
                 <th>Content</th>
               </tr>
             </thead>
@@ -337,7 +337,6 @@
               </tr>
             </tbody>`;
         } else {
-          // Show regular table content
           layerList.innerHTML = `
             <thead>
               <tr>
@@ -346,7 +345,7 @@
                     <input type="checkbox" id="selectAll" ${textLayers.every(layer => layer.selected) ? 'checked' : ''}>
                   </label>
                 </th>
-                <th>Layer Name</th>
+                <th>Name</th>
                 <th>Content</th>
               </tr>
             </thead>
@@ -404,7 +403,7 @@
         let csvContent = '\ufeff';
         
         // Create CSV header
-        csvContent += "Frame,Layer Name,Content\n";
+        csvContent += "Frame,Name,Content\n";
 
         // Add data rows
         textLayers
