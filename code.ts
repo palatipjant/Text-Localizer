@@ -3,6 +3,7 @@ interface TextLayer {
   content: string;
   id: string;
   selected?: boolean;
+  isBound?: boolean;
 }
 
 interface NotificationOptions {
@@ -21,9 +22,6 @@ figma.showUI(__html__, { width: 800, height: 520 });
 async function scanSelectedFrame() {
   const selection = figma.currentPage.selection;
   if (selection.length === 0) {
-    // figma.notify('🔴 Please select a frame', {
-    //   timeout: 5000,
-    // });
     // Send message to UI with empty layers and null frame name
     figma.ui.postMessage({
       type: 'text-layers',
@@ -35,9 +33,6 @@ async function scanSelectedFrame() {
 
   const frame = selection[0];
   if (frame.type !== 'FRAME') {
-    // figma.notify('🔴 Please select a frame', {
-    //   timeout: 5000,
-    // });
     // Send message to UI with empty layers and null frame name
     figma.ui.postMessage({
       type: 'text-layers',
@@ -49,22 +44,31 @@ async function scanSelectedFrame() {
 
   // Find all text layers in the frame
   const textLayers: TextLayer[] = [];
-  function traverse(node: SceneNode): void {
+  
+  // Get all existing variables for comparison
+  const existingVariables = await figma.variables.getLocalVariablesAsync();
+  
+  async function traverse(node: SceneNode): Promise<void> {
     if (node.type === 'TEXT') {
+      // Check if the text node is already bound to a variable
+      const boundVariable = node.boundVariables?.characters;
+      const isAlreadyBound = boundVariable !== undefined;
+
       textLayers.push({
         name: node.name,
         content: node.characters,
         id: node.id,
-        selected: true
+        selected: !isAlreadyBound, // Set selected to false if already bound
+        isBound: isAlreadyBound // Add new property to track binding status
       });
     }
     if ('children' in node) {
       for (const child of node.children) {
-        traverse(child);
+        await traverse(child);
       }
     }
   }
-  traverse(frame);
+  await traverse(frame);
 
   // Send the text layers to the UI
   figma.ui.postMessage({
@@ -176,6 +180,9 @@ figma.ui.onmessage = async (msg: { type: string; layers?: TextLayer[] }) => {
           errorCount++;
         }
       }
+      
+      // After generating variables, rescan the frame to update the UI
+      await scanSelectedFrame();
       
       figma.notify(`🎉 Variables created successfully in "${frameName}" frame! (${successCount} succeeded, ${errorCount} failed)`, {
         timeout: 5000,
