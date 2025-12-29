@@ -280,8 +280,8 @@
     }
 
     .section-content {
-      max-height: 1000px;
-      overflow: hidden;
+      max-height: 5000px;
+      overflow: auto;
       transition: max-height 0.3s ease, opacity 0.3s ease;
       opacity: 1;
     }
@@ -499,6 +499,32 @@
       const selectAllId = `selectAll${sectionType.charAt(0).toUpperCase() + sectionType.slice(1)}`;
       const allSelected = layers.every(layer => layer.selected);
       
+      const tableRows = layers.map((layer) => {
+        const globalIndex = textLayers.indexOf(layer);
+        return `
+          <tr>
+            <td class="checkbox-label">
+              <input type="checkbox" 
+                    data-index="${globalIndex}" 
+                    ${layer.selected ? 'checked' : ''}
+                    ${layer.isBound ? 'title="Already bound to a variable"' : ''}>
+            </td>
+            <td>
+              ${layer.isBound ? `
+                <span class="bound-icon" title="Already bound to a variable">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="14" viewBox="0 0 12 14" fill="none">
+                    <path fill-rule="evenodd" clip-rule="evenodd" d="M7.48653 6.99994C7.48653 7.48634 7.09216 7.8807 6.60576 7.8807C6.11935 7.8807 5.72499 7.48634 5.72499 6.99994C5.72499 6.51353 6.11935 6.11917 6.60576 6.11917C7.09216 6.11917 7.48653 6.51353 7.48653 6.99994ZM8.36729 6.99994C8.36729 7.97273 7.57856 8.76147 6.60576 8.76147C5.7852 8.76147 5.09538 8.20002 4.8997 7.44032H0.440384C0.322547 7.44032 0.215461 7.39409 0.13633 7.31883C0.0524673 7.23862 0 7.1253 0 6.99994C0 6.75674 0.196969 6.55955 0.440384 6.55955H4.8997C5.09538 5.79985 5.7852 5.2384 6.60576 5.2384C7.57856 5.2384 8.36729 6.02714 8.36729 6.99994Z" fill="#1BC47D"/>
+                    <path fill-rule="evenodd" clip-rule="evenodd" d="M2.11576 4.26752C2.24423 4.32417 2.39202 4.31616 2.51362 4.24596L6.44063 1.97873C6.57688 1.90006 6.74475 1.90006 6.88101 1.97873L10.8993 4.29865C11.0355 4.37732 11.1195 4.5227 11.1195 4.68004V9.31986C11.1195 9.4772 11.0355 9.62258 10.8993 9.70126L6.88101 12.0212C6.74475 12.0999 6.57688 12.0999 6.44063 12.0212L2.51362 9.75393C2.39202 9.68373 2.24423 9.67572 2.11576 9.73235C1.78585 9.87785 1.76099 10.3365 2.07324 10.5167L6.44063 13.0382C6.57688 13.1169 6.74475 13.1169 6.88101 13.0382L11.7801 10.2097C11.9163 10.1311 12.0002 9.98575 12.0002 9.82835V4.17153C12.0002 4.01419 11.9163 3.86881 11.7801 3.79014L6.88101 0.961709C6.74475 0.883044 6.57688 0.883044 6.44063 0.961709L2.07324 3.48319C1.76099 3.66346 1.78585 4.12206 2.11576 4.26752Z" fill="#1BC47D"/>
+                  </svg>
+                </span>
+              ` : ''}
+              <span>‎ </span>${layer.name}
+            </td>
+            <td>${layer.content}</td>
+          </tr>
+        `;
+      });
+      
       layerList.innerHTML = `
         <thead>
           <tr>
@@ -512,31 +538,7 @@
           </tr>
         </thead>
         <tbody>
-          ${layers.map((layer) => {
-            const globalIndex = textLayers.indexOf(layer);
-            return `
-              <tr>
-                <td class="checkbox-label">
-                  <input type="checkbox" 
-                        data-index="${globalIndex}" 
-                        ${layer.selected ? 'checked' : ''}
-                        ${layer.isBound ? 'title="Already bound to a variable"' : ''}>
-                </td>
-                <td>
-                  ${layer.isBound ? `
-                    <span class="bound-icon" title="Already bound to a variable">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="14" viewBox="0 0 12 14" fill="none">
-                        <path fill-rule="evenodd" clip-rule="evenodd" d="M7.48653 6.99994C7.48653 7.48634 7.09216 7.8807 6.60576 7.8807C6.11935 7.8807 5.72499 7.48634 5.72499 6.99994C5.72499 6.51353 6.11935 6.11917 6.60576 6.11917C7.09216 6.11917 7.48653 6.51353 7.48653 6.99994ZM8.36729 6.99994C8.36729 7.97273 7.57856 8.76147 6.60576 8.76147C5.7852 8.76147 5.09538 8.20002 4.8997 7.44032H0.440384C0.322547 7.44032 0.215461 7.39409 0.13633 7.31883C0.0524673 7.23862 0 7.1253 0 6.99994C0 6.75674 0.196969 6.55955 0.440384 6.55955H4.8997C5.09538 5.79985 5.7852 5.2384 6.60576 5.2384C7.57856 5.2384 8.36729 6.02714 8.36729 6.99994Z" fill="#1BC47D"/>
-                        <path fill-rule="evenodd" clip-rule="evenodd" d="M2.11576 4.26752C2.24423 4.32417 2.39202 4.31616 2.51362 4.24596L6.44063 1.97873C6.57688 1.90006 6.74475 1.90006 6.88101 1.97873L10.8993 4.29865C11.0355 4.37732 11.1195 4.5227 11.1195 4.68004V9.31986C11.1195 9.4772 11.0355 9.62258 10.8993 9.70126L6.88101 12.0212C6.74475 12.0999 6.57688 12.0999 6.44063 12.0212L2.51362 9.75393C2.39202 9.68373 2.24423 9.67572 2.11576 9.73235C1.78585 9.87785 1.76099 10.3365 2.07324 10.5167L6.44063 13.0382C6.57688 13.1169 6.74475 13.1169 6.88101 13.0382L11.7801 10.2097C11.9163 10.1311 12.0002 9.98575 12.0002 9.82835V4.17153C12.0002 4.01419 11.9163 3.86881 11.7801 3.79014L6.88101 0.961709C6.74475 0.883044 6.57688 0.883044 6.44063 0.961709L2.07324 3.48319C1.76099 3.66346 1.78585 4.12206 2.11576 4.26752Z" fill="#1BC47D"/>
-                      </svg>
-                    </span>
-                  ` : ''}
-                  <span>‎ </span>${layer.name}
-                </td>
-                <td>${layer.content}</td>
-              </tr>
-            `;
-          }).join('')}
+          ${tableRows.join('')}
         </tbody>`;
       
       // Add event listeners for this section

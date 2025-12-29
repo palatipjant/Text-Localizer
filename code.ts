@@ -33,7 +33,11 @@ async function scanSelectedFrame() {
   }
 
   const frame = selection[0];
-  if (frame.type !== 'FRAME') {
+  // Accept any node type that can contain children
+  const validTypes = ['FRAME', 'SECTION', 'COMPONENT', 'INSTANCE', 'GROUP', 'PAGE'];
+  const hasChildren = 'children' in frame;
+  
+  if (!hasChildren && !validTypes.includes(frame.type)) {
     // Send message to UI with empty layers and null frame name
     figma.ui.postMessage({
       type: 'text-layers',
@@ -50,6 +54,8 @@ async function scanSelectedFrame() {
   const existingVariables = await figma.variables.getLocalVariablesAsync();
   
   async function traverse(node: SceneNode): Promise<void> {
+    const isVisible = 'visible' in node ? node.visible : true;
+    
     if (node.type === 'TEXT') {
       // Check if the text node is already bound to a variable
       const boundVariable = node.boundVariables?.characters;
@@ -59,14 +65,18 @@ async function scanSelectedFrame() {
         name: node.name,
         content: node.characters,
         id: node.id,
-        selected: !isAlreadyBound && node.visible, // Set selected to false if already bound or hidden
+        selected: !isAlreadyBound && isVisible, // Set selected to false if already bound or hidden
         isBound: isAlreadyBound, // Add new property to track binding status
-        visible: node.visible // Capture visibility status
+        visible: isVisible // Capture visibility status
       });
     }
-    if ('children' in node) {
-      for (const child of node.children) {
-        await traverse(child);
+    
+    // Check if node has children and traverse them
+    // This includes both regular children and fixed position children
+    if ('children' in node && node.children) {
+      const children = node.children;
+      for (let i = 0; i < children.length; i++) {
+        await traverse(children[i]);
       }
     }
   }
@@ -105,8 +115,11 @@ figma.ui.onmessage = async (msg: { type: string; layers?: TextLayer[] }) => {
     try {
       // Get current selection to identify the frame
       const selection = figma.currentPage.selection;
-      if (selection.length === 0 || selection[0].type !== 'FRAME') {
-        throw new Error('Please select a frame');
+      const validTypes = ['FRAME', 'SECTION', 'COMPONENT', 'INSTANCE', 'GROUP', 'PAGE'];
+      const hasChildren = selection.length > 0 && 'children' in selection[0];
+      
+      if (selection.length === 0 || (!hasChildren && !validTypes.includes(selection[0].type))) {
+        throw new Error('Please select a frame, section, component, group, or instance');
       }
       const frame = selection[0];
       const frameName = frame.name;
