@@ -4,6 +4,7 @@ interface TextLayer {
   id: string;
   selected?: boolean;
   isBound?: boolean;
+  visible?: boolean;
 }
 
 interface NotificationOptions {
@@ -58,8 +59,9 @@ async function scanSelectedFrame() {
         name: node.name,
         content: node.characters,
         id: node.id,
-        selected: !isAlreadyBound, // Set selected to false if already bound
-        isBound: isAlreadyBound // Add new property to track binding status
+        selected: !isAlreadyBound && node.visible, // Set selected to false if already bound or hidden
+        isBound: isAlreadyBound, // Add new property to track binding status
+        visible: node.visible // Capture visibility status
       });
     }
     if ('children' in node) {

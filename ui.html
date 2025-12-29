@@ -243,6 +243,57 @@
     #message {
       margin-top: 8px;
     }
+
+    /* Collapsible Section Styles */
+    .layer-section {
+      margin-bottom: 16px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      padding: 12px;
+      background-color: #f5f5f5;
+      border-radius: 8px;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.2s;
+    }
+
+    .section-header:hover {
+      background-color: #ebebeb;
+    }
+
+    .section-title {
+      font-weight: 600;
+      font-size: 14px;
+      margin-left: 8px;
+    }
+
+    .chevron-icon {
+      transition: transform 0.3s ease;
+      flex-shrink: 0;
+    }
+
+    .chevron-icon.collapsed {
+      transform: rotate(-90deg);
+    }
+
+    .section-content {
+      max-height: 1000px;
+      overflow: hidden;
+      transition: max-height 0.3s ease, opacity 0.3s ease;
+      opacity: 1;
+    }
+
+    .section-content.collapsed {
+      max-height: 0;
+      opacity: 0;
+    }
+
+    .layer-section table {
+      margin-top: 8px;
+    }
   </style>
 </head>
 <body>
@@ -254,29 +305,68 @@
     </div>
     
     <div id="layerListContainer" style="display: none; margin-top: 14px;">
-      <table id="layerList">
-        <thead>
-          <tr>
-            <th class="select-column">
-              <label class="checkbox-label">
-                <input type="checkbox" id="selectAll" disabled>
-              </label>
-            </th>
-            <th>Name</th>
-            <th>Content</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td colspan="3">
-              <div class="empty-state">
-                <img src="https://img5.pic.in.th/file/secure-sv1/empty-state1.png" alt="Empty state">
-                <div class="empty-state-text">Please scan your frame.</div>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <!-- Empty State Container (shown when no layers at all) -->
+      <div id="emptyStateContainer" style="display: none;">
+        <div class="empty-state" id="emptyStateContent">
+          <img src="https://img5.pic.in.th/file/secure-sv1/empty-state1.png" alt="Empty state">
+          <div class="empty-state-text">Please scan your frame.</div>
+        </div>
+      </div>
+
+      <!-- Sections Container (shown when there are layers) -->
+      <div id="sectionsContainer" style="display: none;">
+        <!-- Visible Layers Section -->
+        <div id="visibleSection" class="layer-section">
+          <div class="section-header" onclick="toggleSection('visible')">
+            <svg class="chevron-icon" id="visibleChevron" width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M4 6L8 10L12 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="section-title">Visible Layers</span>
+          </div>
+          <div id="visibleContent" class="section-content">
+            <table id="visibleLayerList">
+              <thead>
+                <tr>
+                  <th class="select-column">
+                    <label class="checkbox-label">
+                      <input type="checkbox" id="selectAllVisible">
+                    </label>
+                  </th>
+                  <th>Name</th>
+                  <th>Content</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Hidden Layers Section -->
+        <div id="hiddenSection" class="layer-section">
+          <div class="section-header" onclick="toggleSection('hidden')">
+            <svg class="chevron-icon" id="hiddenChevron" width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M4 6L8 10L12 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="section-title">Hidden Layers</span>
+          </div>
+          <div id="hiddenContent" class="section-content">
+            <table id="hiddenLayerList">
+              <thead>
+                <tr>
+                  <th class="select-column">
+                    <label class="checkbox-label">
+                      <input type="checkbox" id="selectAllHidden">
+                    </label>
+                  </th>
+                  <th>Name</th>
+                  <th>Content</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
     
     <div class="button-group">
@@ -291,6 +381,22 @@
     
     // Show empty state initially
     document.getElementById('layerListContainer').style.display = 'block';
+    document.getElementById('emptyStateContainer').style.display = 'block';
+    document.getElementById('sectionsContainer').style.display = 'none';
+    
+    // Toggle section collapse/expand
+    function toggleSection(sectionType) {
+      const content = document.getElementById(`${sectionType}Content`);
+      const chevron = document.getElementById(`${sectionType}Chevron`);
+      
+      if (content.classList.contains('collapsed')) {
+        content.classList.remove('collapsed');
+        chevron.classList.remove('collapsed');
+      } else {
+        content.classList.add('collapsed');
+        chevron.classList.add('collapsed');
+      }
+    }
     
     // Function to update button group visibility
     function updateButtonGroupVisibility() {
@@ -330,103 +436,140 @@
     }
 
     function updateLayerList() {
-      const layerList = document.getElementById('layerList');
-      if (layerList) {
-        if (textLayers.length === 0) {
-          // Determine which empty state to show based on whether we have a valid frame
-          const emptyStateContent = currentFrameName !== null
-            ? {
-                image: 'https://img2.pic.in.th/pic/empty-state2.png',
-                text: 'Oops, no text layer'
-              }
-            : {
-                image: 'https://img5.pic.in.th/file/secure-sv1/empty-state1.png',
-                text: 'Please scan your frame.'
-              };
-
-          layerList.innerHTML = `
-            <thead>
-              <tr>
-                <th class="select-column">
-                  <label class="checkbox-label">
-                    <input type="checkbox" id="selectAll" disabled>
-                  </label>
-                </th>
-                <th>Name</th>
-                <th>Content</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td colspan="3">
-                  <div class="empty-state">
-                    <img src="${emptyStateContent.image}" alt="Empty state">
-                    <div class="empty-state-text">${emptyStateContent.text}</div>
-                  </div>
-                </td>
-              </tr>
-            </tbody>`;
+      const emptyStateContainer = document.getElementById('emptyStateContainer');
+      const sectionsContainer = document.getElementById('sectionsContainer');
+      
+      // If no layers at all, show empty state
+      if (textLayers.length === 0) {
+        emptyStateContainer.style.display = 'block';
+        sectionsContainer.style.display = 'none';
+        
+        // Update empty state content based on whether we have a valid frame
+        const emptyStateContent = document.getElementById('emptyStateContent');
+        if (currentFrameName !== null) {
+          emptyStateContent.innerHTML = `
+            <img src="https://img2.pic.in.th/pic/empty-state2.png" alt="Empty state">
+            <div class="empty-state-text">Oops, no text layer</div>
+          `;
         } else {
-          layerList.innerHTML = `
-            <thead>
-              <tr>
-                <th class="select-column">
-                  <label class="checkbox-label">
-                    <input type="checkbox" id="selectAll" ${textLayers.every(layer => layer.selected) ? 'checked' : ''}>
-                  </label>
-                </th>
-                <th>Name</th>
-                <th>Content</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${textLayers.map((layer, index) => `
-                <tr>
-                  <td class="checkbox-label">
-                    <input type="checkbox" 
-                          data-index="${index}" 
-                          ${layer.selected ? 'checked' : ''}
-                          ${layer.isBound ? 'title="Already bound to a variable"' : ''}>
-                  </td>
-                  <td>
-                    ${layer.isBound ? `
-                      <span class="bound-icon" title="Already bound to a variable">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="14" viewBox="0 0 12 14" fill="none">
-                          <path fill-rule="evenodd" clip-rule="evenodd" d="M7.48653 6.99994C7.48653 7.48634 7.09216 7.8807 6.60576 7.8807C6.11935 7.8807 5.72499 7.48634 5.72499 6.99994C5.72499 6.51353 6.11935 6.11917 6.60576 6.11917C7.09216 6.11917 7.48653 6.51353 7.48653 6.99994ZM8.36729 6.99994C8.36729 7.97273 7.57856 8.76147 6.60576 8.76147C5.7852 8.76147 5.09538 8.20002 4.8997 7.44032H0.440384C0.322547 7.44032 0.215461 7.39409 0.13633 7.31883C0.0524673 7.23862 0 7.1253 0 6.99994C0 6.75674 0.196969 6.55955 0.440384 6.55955H4.8997C5.09538 5.79985 5.7852 5.2384 6.60576 5.2384C7.57856 5.2384 8.36729 6.02714 8.36729 6.99994Z" fill="#1BC47D"/>
-                          <path fill-rule="evenodd" clip-rule="evenodd" d="M2.11576 4.26752C2.24423 4.32417 2.39202 4.31616 2.51362 4.24596L6.44063 1.97873C6.57688 1.90006 6.74475 1.90006 6.88101 1.97873L10.8993 4.29865C11.0355 4.37732 11.1195 4.5227 11.1195 4.68004V9.31986C11.1195 9.4772 11.0355 9.62258 10.8993 9.70126L6.88101 12.0212C6.74475 12.0999 6.57688 12.0999 6.44063 12.0212L2.51362 9.75393C2.39202 9.68373 2.24423 9.67572 2.11576 9.73235C1.78585 9.87785 1.76099 10.3365 2.07324 10.5167L6.44063 13.0382C6.57688 13.1169 6.74475 13.1169 6.88101 13.0382L11.7801 10.2097C11.9163 10.1311 12.0002 9.98575 12.0002 9.82835V4.17153C12.0002 4.01419 11.9163 3.86881 11.7801 3.79014L6.88101 0.961709C6.74475 0.883044 6.57688 0.883044 6.44063 0.961709L2.07324 3.48319C1.76099 3.66346 1.78585 4.12206 2.11576 4.26752Z" fill="#1BC47D"/>
-                        </svg>
-                      </span>
-                    ` : ''}
-                    <span>‎ </span>${layer.name}
-                  </td>
-                  <td>${layer.content}</td>
-                </tr>
-              `).join('')}
-            </tbody>`;
-
-          // Add event listeners
-          const selectAllCheckbox = document.getElementById('selectAll');
-          selectAllCheckbox.onchange = (e) => {
-            const checked = e.target.checked;
-            textLayers = textLayers.map(layer => ({...layer, selected: checked}));
-            updateLayerList();
-            updateGenerateButtonText();
-          };
-
-          layerList.querySelectorAll('tbody input[type="checkbox"]').forEach(checkbox => {
-            checkbox.onchange = (e) => {
-              const target = e.target;
-              const index = parseInt(target.dataset.index);
-              textLayers[index].selected = target.checked;
-              document.getElementById('selectAll').checked = textLayers.every(layer => layer.selected);
-              updateGenerateButtonText();
-            };
-          });
+          emptyStateContent.innerHTML = `
+            <img src="https://img5.pic.in.th/file/secure-sv1/empty-state1.png" alt="Empty state">
+            <div class="empty-state-text">Please scan your frame.</div>
+          `;
         }
         
-        // Update button group visibility after updating the layer list
+        // Update button group visibility
         updateButtonGroupVisibility();
+        return;
       }
+      
+      // Show sections, hide empty state
+      emptyStateContainer.style.display = 'none';
+      sectionsContainer.style.display = 'block';
+      
+      // Split layers into visible and hidden
+      const visibleLayers = textLayers.filter(layer => layer.visible !== false);
+      const hiddenLayers = textLayers.filter(layer => layer.visible === false);
+      
+      // Update visible layers section
+      updateSection('visible', visibleLayers);
+      
+      // Update hidden layers section
+      updateSection('hidden', hiddenLayers);
+      
+      // Update button group visibility after updating the layer list
+      updateButtonGroupVisibility();
+    }
+    
+    function updateSection(sectionType, layers) {
+      const layerList = document.getElementById(`${sectionType}LayerList`);
+      const section = document.getElementById(`${sectionType}Section`);
+      
+      if (!layerList || !section) return;
+      
+      // Hide section if no layers
+      if (layers.length === 0) {
+        section.style.display = 'none';
+        return;
+      }
+      
+      // Show section if there are layers
+      section.style.display = 'block';
+      
+      const selectAllId = `selectAll${sectionType.charAt(0).toUpperCase() + sectionType.slice(1)}`;
+      const allSelected = layers.every(layer => layer.selected);
+      
+      layerList.innerHTML = `
+        <thead>
+          <tr>
+            <th class="select-column">
+              <label class="checkbox-label">
+                <input type="checkbox" id="${selectAllId}" ${allSelected ? 'checked' : ''}>
+              </label>
+            </th>
+            <th>Name</th>
+            <th>Content</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${layers.map((layer) => {
+            const globalIndex = textLayers.indexOf(layer);
+            return `
+              <tr>
+                <td class="checkbox-label">
+                  <input type="checkbox" 
+                        data-index="${globalIndex}" 
+                        ${layer.selected ? 'checked' : ''}
+                        ${layer.isBound ? 'title="Already bound to a variable"' : ''}>
+                </td>
+                <td>
+                  ${layer.isBound ? `
+                    <span class="bound-icon" title="Already bound to a variable">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="14" viewBox="0 0 12 14" fill="none">
+                        <path fill-rule="evenodd" clip-rule="evenodd" d="M7.48653 6.99994C7.48653 7.48634 7.09216 7.8807 6.60576 7.8807C6.11935 7.8807 5.72499 7.48634 5.72499 6.99994C5.72499 6.51353 6.11935 6.11917 6.60576 6.11917C7.09216 6.11917 7.48653 6.51353 7.48653 6.99994ZM8.36729 6.99994C8.36729 7.97273 7.57856 8.76147 6.60576 8.76147C5.7852 8.76147 5.09538 8.20002 4.8997 7.44032H0.440384C0.322547 7.44032 0.215461 7.39409 0.13633 7.31883C0.0524673 7.23862 0 7.1253 0 6.99994C0 6.75674 0.196969 6.55955 0.440384 6.55955H4.8997C5.09538 5.79985 5.7852 5.2384 6.60576 5.2384C7.57856 5.2384 8.36729 6.02714 8.36729 6.99994Z" fill="#1BC47D"/>
+                        <path fill-rule="evenodd" clip-rule="evenodd" d="M2.11576 4.26752C2.24423 4.32417 2.39202 4.31616 2.51362 4.24596L6.44063 1.97873C6.57688 1.90006 6.74475 1.90006 6.88101 1.97873L10.8993 4.29865C11.0355 4.37732 11.1195 4.5227 11.1195 4.68004V9.31986C11.1195 9.4772 11.0355 9.62258 10.8993 9.70126L6.88101 12.0212C6.74475 12.0999 6.57688 12.0999 6.44063 12.0212L2.51362 9.75393C2.39202 9.68373 2.24423 9.67572 2.11576 9.73235C1.78585 9.87785 1.76099 10.3365 2.07324 10.5167L6.44063 13.0382C6.57688 13.1169 6.74475 13.1169 6.88101 13.0382L11.7801 10.2097C11.9163 10.1311 12.0002 9.98575 12.0002 9.82835V4.17153C12.0002 4.01419 11.9163 3.86881 11.7801 3.79014L6.88101 0.961709C6.74475 0.883044 6.57688 0.883044 6.44063 0.961709L2.07324 3.48319C1.76099 3.66346 1.78585 4.12206 2.11576 4.26752Z" fill="#1BC47D"/>
+                      </svg>
+                    </span>
+                  ` : ''}
+                  <span>‎ </span>${layer.name}
+                </td>
+                <td>${layer.content}</td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>`;
+      
+      // Add event listeners for this section
+      const selectAllCheckbox = document.getElementById(selectAllId);
+      if (selectAllCheckbox) {
+        selectAllCheckbox.onchange = (e) => {
+          const checked = e.target.checked;
+          layers.forEach(layer => {
+            layer.selected = checked;
+          });
+          updateLayerList();
+          updateGenerateButtonText();
+        };
+      }
+      
+      layerList.querySelectorAll('tbody input[type="checkbox"]').forEach(checkbox => {
+        checkbox.onchange = (e) => {
+          const target = e.target;
+          const index = parseInt(target.dataset.index);
+          textLayers[index].selected = target.checked;
+          
+          // Update the select all checkbox for this section
+          const sectionLayers = sectionType === 'visible' 
+            ? textLayers.filter(l => l.visible !== false)
+            : textLayers.filter(l => l.visible === false);
+          const allSelected = sectionLayers.every(layer => layer.selected);
+          if (selectAllCheckbox) {
+            selectAllCheckbox.checked = allSelected;
+          }
+          
+          updateGenerateButtonText();
+        };
+      });
     }
 
     document.getElementById('generateButton').onclick = () => {
