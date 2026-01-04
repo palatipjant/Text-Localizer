@@ -19,6 +19,12 @@ interface NotificationOptions {
 
 figma.showUI(__html__, { width: 800, height: 520 });
 
+// Sanitize variable names by replacing Figma-restricted characters
+function sanitizeVariableName(name: string): string {
+  // Replace Figma-restricted characters ($, ., {, }) and forward slash with underscore
+  return name.replace(/[$./{}]/g, '_');
+}
+
 // Function to scan the selected frame
 async function scanSelectedFrame() {
   const selection = figma.currentPage.selection;
@@ -122,7 +128,7 @@ figma.ui.onmessage = async (msg: { type: string; layers?: TextLayer[] }) => {
         throw new Error('Please select a frame, section, component, group, or instance');
       }
       const frame = selection[0];
-      const frameName = frame.name;
+      const frameName = sanitizeVariableName(frame.name);
 
       // Filter only selected layers
       const selectedLayers = msg.layers.filter(layer => layer.selected);
@@ -157,8 +163,9 @@ figma.ui.onmessage = async (msg: { type: string; layers?: TextLayer[] }) => {
         try {
           // Handle duplicate names
           const baseLayerName = layer.name;
+          const sanitizedLayerName = sanitizeVariableName(baseLayerName);
           const count = nameOccurrences.get(baseLayerName) || 0;
-          const layerName = count > 0 ? `${baseLayerName}_${count}` : baseLayerName;
+          const layerName = count > 0 ? `${sanitizedLayerName}_${count}` : sanitizedLayerName;
           nameOccurrences.set(baseLayerName, count + 1);
 
           // Create variable name with frame prefix for grouping

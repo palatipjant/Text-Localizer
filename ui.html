@@ -294,6 +294,113 @@
     .layer-section table {
       margin-top: 8px;
     }
+
+    /* Search Bar Styles */
+    #searchContainer {
+      margin-bottom: 14px;
+    }
+
+    .search-bar {
+      margin-bottom: 8px;
+    }
+
+    .search-input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      background: white;
+      border: 1px solid #E5E5E5;
+      border-radius: 8px;
+      padding: 8px 12px;
+      transition: border-color 0.2s;
+    }
+
+    .search-input-wrapper:focus-within {
+      border-color: #18A0FB;
+    }
+
+    .search-icon {
+      flex-shrink: 0;
+      margin-right: 8px;
+    }
+
+    #searchInput {
+      flex: 1;
+      border: none;
+      outline: none;
+      font-family: Inter, sans-serif;
+      font-size: 14px;
+      background: transparent;
+    }
+
+    #searchInput::placeholder {
+      color: #999;
+    }
+
+    .clear-button {
+      flex-shrink: 0;
+      background: none;
+      border: none;
+      padding: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      transition: background-color 0.2s;
+    }
+
+    .clear-button:hover {
+      background-color: #f0f0f0;
+    }
+
+    .search-filters {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .filter-label {
+      font-size: 13px;
+      color: #666;
+      font-weight: 500;
+    }
+
+    .filter-button {
+      padding: 6px 12px;
+      font-size: 13px;
+      font-family: Inter, sans-serif;
+      border: 1px solid #E5E5E5;
+      background: white;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: 500;
+    }
+
+    .filter-button:hover {
+      background-color: #f5f5f5;
+    }
+
+    .filter-button.active {
+      background-color: #18A0FB;
+      color: white;
+      border-color: #18A0FB;
+    }
+
+    .search-results-count {
+      font-size: 13px;
+      color: #666;
+      padding: 6px 0;
+    }
+
+    .no-results-message {
+      text-align: center;
+      padding: 32px;
+      color: #999;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
@@ -304,7 +411,32 @@
       <span id="frameName">-</span>
     </div>
     
-    <div id="layerListContainer" style="display: none; margin-top: 14px;">
+    <!-- Search Bar -->
+    <div id="searchContainer" style="display: none; margin-top: 8px;">
+      <div class="search-bar">
+        <div class="search-input-wrapper">
+          <svg class="search-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M7 12C9.76142 12 12 9.76142 12 7C12 4.23858 9.76142 2 7 2C4.23858 2 2 4.23858 2 7C2 9.76142 4.23858 12 7 12Z" stroke="#999" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M14 14L10.5 10.5" stroke="#999" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <input type="text" id="searchInput" placeholder="Search by name or content..." />
+          <button id="clearSearch" class="clear-button" style="display: none;" title="Clear search">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M1 1L13 13M13 1L1 13" stroke="#666" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="search-filters">
+        <span class="filter-label">Show:</span>
+        <button class="filter-button active" data-filter="all">All</button>
+        <button class="filter-button" data-filter="visible">Visible Only</button>
+        <button class="filter-button" data-filter="hidden">Hidden Only</button>
+      </div>
+      <div id="searchResultsCount" class="search-results-count" style="display: none;"></div>
+    </div>
+    
+    <div id="layerListContainer" style="display: none; margin-top: 0px;">
       <!-- Empty State Container (shown when no layers at all) -->
       <div id="emptyStateContainer" style="display: none;">
         <div class="empty-state" id="emptyStateContent">
@@ -315,6 +447,11 @@
 
       <!-- Sections Container (shown when there are layers) -->
       <div id="sectionsContainer" style="display: none;">
+        <!-- No Results Message -->
+        <div id="noResultsMessage" class="no-results-message" style="display: none;">
+          No layers found matching your search.
+        </div>
+        
         <!-- Visible Layers Section -->
         <div id="visibleSection" class="layer-section">
           <div class="section-header" onclick="toggleSection('visible')">
@@ -378,6 +515,9 @@
   <script>
     let textLayers = [];
     let currentFrameName = null;
+    let searchQuery = '';
+    let searchFilter = 'all'; // 'all', 'visible', 'hidden'
+    let filteredLayers = [];
     
     // Show empty state initially
     document.getElementById('layerListContainer').style.display = 'block';
@@ -398,6 +538,74 @@
       }
     }
     
+    // Search and filter layers
+    function performSearch() {
+      const query = searchQuery.toLowerCase().trim();
+      
+      // If no search query, return all layers
+      if (query === '') {
+        filteredLayers = textLayers;
+      } else {
+        // Filter by name or content (case-insensitive)
+        filteredLayers = textLayers.filter(layer => {
+          const nameMatch = layer.name.toLowerCase().includes(query);
+          const contentMatch = layer.content.toLowerCase().includes(query);
+          return nameMatch || contentMatch;
+        });
+      }
+      
+      // Apply section filter
+      if (searchFilter === 'visible') {
+        filteredLayers = filteredLayers.filter(layer => layer.visible !== false);
+      } else if (searchFilter === 'hidden') {
+        filteredLayers = filteredLayers.filter(layer => layer.visible === false);
+      }
+      
+      // Update the display
+      updateLayerList(filteredLayers);
+      updateSearchResultsCount();
+    }
+    
+    // Update search results count display
+    function updateSearchResultsCount() {
+      const resultsCount = document.getElementById('searchResultsCount');
+      const isSearchActive = searchQuery !== '' || searchFilter !== 'all';
+      
+      if (isSearchActive && textLayers.length > 0) {
+        resultsCount.style.display = 'block';
+        resultsCount.textContent = `Showing ${filteredLayers.length} of ${textLayers.length} layers`;
+      } else {
+        resultsCount.style.display = 'none';
+      }
+    }
+    
+    // Clear search
+    function clearSearch() {
+      searchQuery = '';
+      document.getElementById('searchInput').value = '';
+      document.getElementById('clearSearch').style.display = 'none';
+      filteredLayers = textLayers;
+      updateLayerList(filteredLayers);
+      updateSearchResultsCount();
+    }
+    
+    // Set search filter
+    function setSearchFilter(filter) {
+      searchFilter = filter;
+      
+      // Update active button
+      document.querySelectorAll('.filter-button').forEach(btn => {
+        if (btn.dataset.filter === filter) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+      
+      // Perform search with new filter
+      performSearch();
+    }
+    
     // Function to update button group visibility
     function updateButtonGroupVisibility() {
       const buttonGroup = document.querySelector('.button-group');
@@ -414,6 +622,34 @@
     document.getElementById('scanButton').onclick = () => {
       parent.postMessage({ pluginMessage: { type: 'scan-selection' } }, '*');
     };
+    
+    // Search input event listener
+    document.getElementById('searchInput').oninput = (e) => {
+      searchQuery = e.target.value;
+      
+      // Show/hide clear button
+      const clearButton = document.getElementById('clearSearch');
+      if (searchQuery !== '') {
+        clearButton.style.display = 'flex';
+      } else {
+        clearButton.style.display = 'none';
+      }
+      
+      // Perform search in real-time
+      performSearch();
+    };
+    
+    // Clear search button event listener
+    document.getElementById('clearSearch').onclick = () => {
+      clearSearch();
+    };
+    
+    // Filter buttons event listeners
+    document.querySelectorAll('.filter-button').forEach(button => {
+      button.onclick = () => {
+        setSearchFilter(button.dataset.filter);
+      };
+    });
 
     function updateGenerateButtonText() {
       const selectedCount = textLayers.filter(layer => layer.selected).length;
@@ -435,7 +671,10 @@
       }
     }
 
-    function updateLayerList() {
+    function updateLayerList(layersToDisplay) {
+      // Use filtered layers if provided, otherwise use all layers
+      const displayLayers = layersToDisplay || textLayers;
+      
       const emptyStateContainer = document.getElementById('emptyStateContainer');
       const sectionsContainer = document.getElementById('sectionsContainer');
       
@@ -467,9 +706,27 @@
       emptyStateContainer.style.display = 'none';
       sectionsContainer.style.display = 'block';
       
+      // Check if we have filtered results
+      const isSearchActive = searchQuery !== '' || searchFilter !== 'all';
+      const noResultsMessage = document.getElementById('noResultsMessage');
+      const visibleSection = document.getElementById('visibleSection');
+      const hiddenSection = document.getElementById('hiddenSection');
+      
+      // If search is active and no results, show "no results" message
+      if (isSearchActive && displayLayers.length === 0) {
+        noResultsMessage.style.display = 'block';
+        visibleSection.style.display = 'none';
+        hiddenSection.style.display = 'none';
+        updateButtonGroupVisibility();
+        return;
+      }
+      
+      // Hide no results message and show sections
+      noResultsMessage.style.display = 'none';
+      
       // Split layers into visible and hidden
-      const visibleLayers = textLayers.filter(layer => layer.visible !== false);
-      const hiddenLayers = textLayers.filter(layer => layer.visible === false);
+      const visibleLayers = displayLayers.filter(layer => layer.visible !== false);
+      const hiddenLayers = displayLayers.filter(layer => layer.visible === false);
       
       // Update visible layers section
       updateSection('visible', visibleLayers);
@@ -642,8 +899,31 @@
       if (msg.type === 'text-layers') {
         textLayers = msg.layers;
         
+        // Reset search when new layers are loaded
+        searchQuery = '';
+        searchFilter = 'all';
+        filteredLayers = textLayers;
+        document.getElementById('searchInput').value = '';
+        document.getElementById('clearSearch').style.display = 'none';
+        
+        // Update filter buttons
+        document.querySelectorAll('.filter-button').forEach(btn => {
+          if (btn.dataset.filter === 'all') {
+            btn.classList.add('active');
+          } else {
+            btn.classList.remove('active');
+          }
+        });
+        
         // Update frame name
         updateFrameName(msg.frameName);
+        
+        // Show search container if we have a valid frame
+        if (msg.frameName !== null) {
+          document.getElementById('searchContainer').style.display = 'block';
+        } else {
+          document.getElementById('searchContainer').style.display = 'none';
+        }
         
         // Show layer list container
         document.getElementById('layerListContainer').style.display = 'block';
